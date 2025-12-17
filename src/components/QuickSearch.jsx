@@ -56,6 +56,13 @@ const QuickSearch = () => {
         const data = await response.json();
         
         if (data.data && Array.isArray(data.data.orders) && data.data.orders.length > 0) {
+
+          const descriptions = data.data.orders.map((item) => item.description);
+          const lowerCaseDescirptions = descriptions.map((item) => item.toLowerCase());
+          const uniqueDescriptions = [...new Set(lowerCaseDescirptions)];
+
+          debugger;
+
           // Группируем объявления по описанию
           const groupedByDescription = data.data.orders.reduce((groups, order) => {
             if (!order.description) return groups;
@@ -74,7 +81,7 @@ const QuickSearch = () => {
             groups[normalizedDesc].orders.push(order);
             return groups;
           }, {});
-          
+          debugger;
           // Преобразуем объект в массив и сортируем по количеству объявлений
           const groupedArray = Object.values(groupedByDescription)
             .sort((a, b) => b.count - a.count) // сортируем по убыванию количества
