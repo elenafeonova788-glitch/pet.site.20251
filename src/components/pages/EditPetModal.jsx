@@ -285,18 +285,52 @@ const EditPetModal = ({ pet, token, onClose, onSuccess, showNotification }) => {
               </div>
               
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isSubmitting}>
-                  Отмена
-                </button>
-                <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                      Сохранение...
-                    </>
-                  ) : 'Сохранить изменения'}
-                </button>
-              </div>
+  <button 
+    type="button" 
+    className="btn btn-secondary" 
+    onClick={onClose} 
+    disabled={isSubmitting}
+    style={{
+      borderColor: '#6c757d',
+      color: '#6c757d'
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.backgroundColor = '#6c757d';
+      e.currentTarget.style.color = 'white';
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.backgroundColor = 'transparent';
+      e.currentTarget.style.color = '#6c757d';
+    }}
+  >
+    Отмена
+  </button>
+  <button 
+    type="submit" 
+    className="btn btn-primary" 
+    disabled={isSubmitting}
+    style={{
+      backgroundColor: '#fd7e14',
+      borderColor: '#fd7e14',
+      color: 'white'
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.backgroundColor = '#e06c00';
+      e.currentTarget.style.borderColor = '#e06c00';
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.backgroundColor = '#fd7e14';
+      e.currentTarget.style.borderColor = '#fd7e14';
+    }}
+  >
+    {isSubmitting ? (
+      <>
+        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Сохранение...
+      </>
+    ) : 'Сохранить изменения'}
+  </button>
+</div>
             </form>
           </div>
         </div>

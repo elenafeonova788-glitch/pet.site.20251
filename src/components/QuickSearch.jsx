@@ -44,7 +44,7 @@ const QuickSearch = () => {
     performSearch();
   }, [debouncedSearchQuery]);
 
-  // Функция для получения подсказок с сервера и удаления дубликатов
+  // Функция для получения подсказок с сервера и группировки по описаниям
   const fetchSuggestions = async (query) => {
     try {
       setIsLoading(true);
@@ -56,27 +56,31 @@ const QuickSearch = () => {
         const data = await response.json();
         
         if (data.data && Array.isArray(data.data.orders) && data.data.orders.length > 0) {
-          // Удаляем дубликаты по ID с помощью Map
-          const uniqueOrders = Array.from(
-            new Map(data.data.orders.map(order => [order.id, order])).values()
-          );
-          
-          // Убираем дубликаты по описанию с помощью Set
-          const seenDescriptions = new Set();
-          const filteredOrders = uniqueOrders.filter(order => {
-            if (!order.description) return true;
+          // Группируем объявления по описанию
+          const groupedByDescription = data.data.orders.reduce((groups, order) => {
+            if (!order.description) return groups;
             
             const normalizedDesc = order.description.trim().toLowerCase();
-            if (seenDescriptions.has(normalizedDesc)) {
-              return false;
+            if (!groups[normalizedDesc]) {
+              groups[normalizedDesc] = {
+                description: order.description,
+                count: 0,
+                exampleId: order.id, // сохраняем один ID для примера
+                fullDescription: order.description, // сохраняем оригинальное описание
+                orders: [] // сохраняем все объявления с этим описанием
+              };
             }
-            seenDescriptions.add(normalizedDesc);
-            return true;
-          });
+            groups[normalizedDesc].count++;
+            groups[normalizedDesc].orders.push(order);
+            return groups;
+          }, {});
           
-          // Ограничиваем 5 результатами
-          const limitedResults = filteredOrders.slice(0, 5);
-          setSuggestions(limitedResults);
+          // Преобразуем объект в массив и сортируем по количеству объявлений
+          const groupedArray = Object.values(groupedByDescription)
+            .sort((a, b) => b.count - a.count) // сортируем по убыванию количества
+            .slice(0, 5); // ограничиваем 5 результатами
+          
+          setSuggestions(groupedArray);
         } else {
           setSuggestions([]);
         }
@@ -102,10 +106,11 @@ const QuickSearch = () => {
     }
   };
 
-  // Функция для обработки поиска
+  // Функция для обработки поиска по всему запросу
   const handleSearch = () => {
     if (searchQuery.trim()) {
-      navigate(`/search?kind=${encodeURIComponent(searchQuery.trim())}`);
+      // Используем searchQuery как параметр description для поисковой страницы
+      navigate(`/search?description=${encodeURIComponent(searchQuery.trim())}`);
       setShowSuggestions(false);
       setSearchQuery('');
     }
@@ -119,12 +124,22 @@ const QuickSearch = () => {
     }
   };
 
-  // Обработчик клика по подсказке
+  // Обработчик клика по подсказке (описанию)
   const handleSuggestionClick = (suggestion) => {
-    navigate(`/pet/${suggestion.id}`);
-    setSearchQuery('');
-    setSuggestions([]);
+    // Переходим на страницу поиска с фильтром по этому описанию
+    if (suggestion.fullDescription || suggestion.description) {
+      const description = suggestion.fullDescription || suggestion.description;
+      navigate(`/search?description=${encodeURIComponent(description)}`);
+      setShowSuggestions(false);
+      setSearchQuery('');
+    }
+  };
+
+  // Обработчик клика по одиночному объявлению (если description уникален)
+  const handleSinglePetClick = (order) => {
+    navigate(`/pet/${order.id}`);
     setShowSuggestions(false);
+    setSearchQuery('');
   };
 
   // Закрытие подсказок при клике вне компонента
@@ -151,25 +166,109 @@ const QuickSearch = () => {
     return (text || '').replace(regex, '<mark>$1</mark>');
   };
 
-  // Функция для отображения подсказки (только описание)
-  const renderSuggestion = (suggestion) => {
+  // Функция для отображения подсказки (описание и количество объявлений)
+  const renderSuggestion = (suggestion, index) => {
+    // Если только одно объявление с таким описанием, показываем как одиночное
+    if (suggestion.count === 1 && suggestion.orders && suggestion.orders[0]) {
+      const order = suggestion.orders[0];
+      return (
+        <div
+          key={index}
+          className="p-3 border-bottom hover-bg-light cursor-pointer"
+          onClick={() => handleSinglePetClick(order)}
+          style={{ cursor: 'pointer' }}
+          onMouseEnter={(e) => e.currentTarget.classList.add('bg-light')}
+          onMouseLeave={(e) => e.currentTarget.classList.remove('bg-light')}
+        >
+          <div className="d-flex justify-content-between align-items-start">
+            <div className="flex-grow-1">
+              {/* Описание животного с подсветкой */}
+              {suggestion.description && (
+                <div className="mb-1">
+                  <span dangerouslySetInnerHTML={{ 
+                    __html: highlightMatch(suggestion.description, searchQuery) 
+                  }} />
+                </div>
+              )}
+              {/* Дополнительная информация о животном */}
+              {order.kind && (
+                <div className="text-muted small">
+                  <i className="bi bi-tag me-1"></i>
+                  {order.kind}
+                  {order.district && (
+                    <>
+                      <i className="bi bi-geo-alt ms-2 me-1"></i>
+                      {order.district}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            {/* Бейдж для одиночного объявления */}
+            <span className="badge bg-secondary ms-2">
+              1 объявление
+            </span>
+          </div>
+          
+          {/* Вспомогательный текст */}
+          <div className="text-muted small mt-1">
+            <i className="bi bi-info-circle me-1"></i>
+            Нажмите, чтобы посмотреть это объявление
+          </div>
+        </div>
+      );
+    }
+    
+    // Если несколько объявлений с таким описанием
     return (
       <div
-        key={suggestion.id}
-        className="p-2 border-bottom hover-bg-light cursor-pointer"
+        key={index}
+        className="p-3 border-bottom hover-bg-light cursor-pointer"
         onClick={() => handleSuggestionClick(suggestion)}
         style={{ cursor: 'pointer' }}
         onMouseEnter={(e) => e.currentTarget.classList.add('bg-light')}
         onMouseLeave={(e) => e.currentTarget.classList.remove('bg-light')}
       >
-        {/* Только описание животного */}
-        {suggestion.description && (
-          <div className="text-muted small">
-            <span dangerouslySetInnerHTML={{ 
-              __html: highlightMatch(suggestion.description, searchQuery) 
-            }} />
+        <div className="d-flex justify-content-between align-items-start">
+          <div className="flex-grow-1">
+            {/* Описание животного с подсветкой */}
+            {suggestion.description && (
+              <div className="mb-1">
+                <span dangerouslySetInnerHTML={{ 
+                  __html: highlightMatch(suggestion.description, searchQuery) 
+                }} />
+              </div>
+            )}
+            
+            {/* Примеры животных из этой группы */}
+            {suggestion.orders && suggestion.orders.slice(0, 2).map((order, i) => (
+              <div key={i} className="text-muted small">
+                <i className="bi bi-circle-fill me-1" style={{ fontSize: '6px' }}></i>
+                {order.kind || 'Животное'}
+                {order.district && ` • ${order.district}`}
+              </div>
+            ))}
+            
+            {suggestion.count > 2 && (
+              <div className="text-muted small">
+                <i className="bi bi-three-dots me-1"></i>
+                и ещё {suggestion.count - 2} объявлений
+              </div>
+            )}
           </div>
-        )}
+          
+          {/* Бейдж с количеством объявлений */}
+          <span className="badge bg-primary ms-2">
+            {suggestion.count} объявлений
+          </span>
+        </div>
+        
+        {/* Вспомогательный текст */}
+        <div className="text-muted small mt-1">
+          <i className="bi bi-info-circle me-1"></i>
+          Нажмите, чтобы посмотреть все объявления с этим описанием
+        </div>
       </div>
     );
   };
@@ -213,7 +312,7 @@ const QuickSearch = () => {
         </div>
         
         <button 
-          className="btn btn-primary ms-2 flex-shrink-0" 
+          className="btn btn-success ms-2 flex-shrink-0" 
           type="button"
           onClick={handleSearch}
           disabled={!searchQuery.trim()}
@@ -230,9 +329,9 @@ const QuickSearch = () => {
           className="position-absolute top-100 start-0 end-0 mt-1 bg-white rounded shadow-lg border"
           style={{ 
             zIndex: 1050, 
-            maxHeight: '250px', // Уменьшил высоту для 5 элементов
+            maxHeight: '400px',
             overflowY: 'auto',
-            width: '100%' // Добавил ширину 100% для адаптивности
+            width: '100%'
           }}
         >
           {isLoading ? (
@@ -242,11 +341,21 @@ const QuickSearch = () => {
             </div>
           ) : suggestions.length > 0 ? (
             <>
-
+              <div className="p-3 border-bottom bg-light">
+                <small className="text-muted">
+                  <i className="bi bi-lightbulb me-1"></i>
+                  Найдено описаний: {suggestions.length}
+                </small>
+              </div>
+              
               {suggestions.map(renderSuggestion)}
-              <div className="p-2 border-top text-center">
+              
+              <div className="p-3 border-top text-center bg-light">
+                <small className="text-muted d-block mb-2">
+                  Всего найдено {suggestions.reduce((sum, item) => sum + item.count, 0)} объявлений
+                </small>
                 <button 
-                  className="btn btn-sm btn-primary"
+                  className="btn btn-sm btn-success"
                   onClick={handleSearch}
                 >
                   <i className="bi bi-search me-1"></i>
@@ -256,9 +365,9 @@ const QuickSearch = () => {
             </>
           ) : (
             <div className="p-3 text-center text-muted">
-              <i className="bi bi-search mb-2"></i>
-              <p className="mb-0">Ничего не найдено по запросу "{searchQuery}"</p>
-              <small>Попробуйте изменить запрос</small>
+              <i className="bi bi-search mb-2" style={{ fontSize: '24px' }}></i>
+              <p className="mb-1">Ничего не найдено по запросу "{searchQuery}"</p>
+              <small className="d-block">Попробуйте изменить запрос</small>
             </div>
           )}
         </div>

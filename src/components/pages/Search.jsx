@@ -7,7 +7,8 @@ const Search = ({ showNotification }) => {
   
   const [searchParams, setSearchParams] = useState({
     district: '',
-    kind: ''
+    kind: '',
+    description: ''
   });
   
   const [results, setResults] = useState([]);
@@ -17,7 +18,7 @@ const Search = ({ showNotification }) => {
   const [totalPages, setTotalPages] = useState(0);
   const [totalResults, setTotalResults] = useState(0);
   const [districts, setDistricts] = useState([]);
-  const [hasSearched, setHasSearched] = useState(false); // Новое состояние для отслеживания поиска
+  const [hasSearched, setHasSearched] = useState(false);
   
   const itemsPerPage = 10;
   
@@ -52,15 +53,16 @@ const Search = ({ showNotification }) => {
     const params = new URLSearchParams(location.search);
     const district = params.get('district') || '';
     const kind = params.get('kind') || '';
+    const description = params.get('description') || '';
     const page = parseInt(params.get('page')) || 1;
     
-    setSearchParams({ district, kind });
+    setSearchParams({ district, kind, description });
     setCurrentPage(page);
     
     // Загружаем животных только если есть хотя бы один параметр поиска
-    if (district || kind) {
+    if (district || kind || description) {
       setHasSearched(true);
-      performSearch({ district, kind }, page);
+      performSearch({ district, kind, description }, page);
     } else {
       // Если нет параметров поиска - сбрасываем результаты
       setResults([]);
@@ -70,19 +72,24 @@ const Search = ({ showNotification }) => {
     }
   }, [location.search]);
   
-  // Функция для получения животных с фильтрами
+  // Универсальная функция поиска, которая использует тот же API что и быстрый поиск
   const performSearch = async (params = searchParams, page = currentPage) => {
     setIsLoading(true);
     setError(null);
     
     try {
-      const queryParams = new URLSearchParams();
+      let url;
       
-      // Добавляем параметры поиска
-      if (params.district) queryParams.append('district', params.district);
-      if (params.kind) queryParams.append('kind', params.kind);
-      
-      const url = `https://pets.сделай.site/api/search/order?${queryParams.toString()}`;
+      // Если есть описание, используем API быстрого поиска для лучших результатов
+      if (params.description) {
+        url = `https://pets.сделай.site/api/search?query=${encodeURIComponent(params.description)}`;
+      } else {
+        // Если нет описания, используем стандартный API с фильтрами
+        const queryParams = new URLSearchParams();
+        if (params.district) queryParams.append('district', params.district);
+        if (params.kind) queryParams.append('kind', params.kind);
+        url = `https://pets.сделай.site/api/search/order?${queryParams.toString()}`;
+      }
       
       console.log('Fetching from URL:', url);
       
@@ -98,7 +105,7 @@ const Search = ({ showNotification }) => {
         let allResults = [];
         
         if (data.data && Array.isArray(data.data.orders)) {
-          // Формат поиска по заказам
+          // Формат поиска по заказам (как в быстром поиске)
           allResults = data.data.orders;
         } else if (data.data && Array.isArray(data.data)) {
           // Формат для всех животных
@@ -111,7 +118,32 @@ const Search = ({ showNotification }) => {
           allResults = data.orders;
         }
         
-        console.log('Processed results:', allResults);
+        console.log('Processed results before filtering:', allResults);
+        
+        // Дополнительная фильтрация на клиенте, если нужно
+        if (params.district && allResults.length > 0) {
+          const searchDistrict = params.district.toLowerCase().trim();
+          allResults = allResults.filter(order => 
+            order.district && order.district.toLowerCase() === searchDistrict
+          );
+        }
+        
+        if (params.kind && allResults.length > 0) {
+          const searchKind = params.kind.toLowerCase().trim();
+          allResults = allResults.filter(order => 
+            order.kind && order.kind.toLowerCase().includes(searchKind)
+          );
+        }
+        
+        // Если искали по описанию через API /api/search, дополнительно фильтруем
+        if (params.description && allResults.length > 0 && !url.includes('/api/search/order')) {
+          const searchDescription = params.description.toLowerCase().trim();
+          allResults = allResults.filter(order => 
+            order.description && order.description.toLowerCase().includes(searchDescription)
+          );
+        }
+        
+        console.log('Processed results after filtering:', allResults);
         
         setTotalResults(allResults.length);
         
@@ -166,7 +198,7 @@ const Search = ({ showNotification }) => {
     e.preventDefault();
     
     // Проверяем, что заполнено хотя бы одно поле
-    if (!searchParams.district && !searchParams.kind.trim()) {
+    if (!searchParams.district && !searchParams.kind.trim() && !searchParams.description.trim()) {
       showNotification('Заполните хотя бы одно поле для поиска', 'warning');
       return;
     }
@@ -174,6 +206,7 @@ const Search = ({ showNotification }) => {
     const queryParams = new URLSearchParams();
     if (searchParams.district) queryParams.append('district', searchParams.district);
     if (searchParams.kind.trim()) queryParams.append('kind', searchParams.kind.trim());
+    if (searchParams.description.trim()) queryParams.append('description', searchParams.description.trim());
     
     navigate(`/search?${queryParams.toString()}`);
     setCurrentPage(1);
@@ -199,7 +232,7 @@ const Search = ({ showNotification }) => {
   };
   
   const handleReset = () => {
-    setSearchParams({ district: '', kind: '' });
+    setSearchParams({ district: '', kind: '', description: '' });
     setResults([]);
     setCurrentPage(1);
     setTotalPages(0);
@@ -250,6 +283,17 @@ const Search = ({ showNotification }) => {
     
     return pages;
   };
+
+  // Функция для подсветки текста в описании
+  const highlightText = (text, searchTerm) => {
+    if (!text || !searchTerm) return text;
+    
+    // Создаем регулярное выражение для поиска всех вхождений
+    const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    
+    // Заменяем все вхождения на выделенный текст
+    return text.replace(regex, '<mark>$1</mark>');
+  };
   
   return (
     <div className="search-page">
@@ -260,7 +304,7 @@ const Search = ({ showNotification }) => {
           <div className="card-body">
             <form onSubmit={handleSubmit}>
               <div className="row g-3">
-                <div className="col-md-6">
+                <div className="col-md-4">
                   <label htmlFor="district" className="form-label">Район</label>
                   <select
                     id="district"
@@ -279,7 +323,7 @@ const Search = ({ showNotification }) => {
                   <div className="form-text">Поиск по полному соответствию</div>
                 </div>
                 
-                <div className="col-md-6">
+                <div className="col-md-4">
                   <label htmlFor="kind" className="form-label">Вид животного</label>
                   <input
                     type="text"
@@ -291,6 +335,20 @@ const Search = ({ showNotification }) => {
                     onChange={handleInputChange}
                   />
                   <div className="form-text">Поиск по частичному соответствию</div>
+                </div>
+
+                <div className="col-md-4">
+                  <label htmlFor="description" className="form-label">Описание</label>
+                  <input
+                    type="text"
+                    id="description"
+                    name="description"
+                    className="form-control"
+                    placeholder="Поиск по описанию..."
+                    value={searchParams.description}
+                    onChange={handleInputChange}
+                  />
+                  <div className="form-text">Поиск по тексту в описании</div>
                 </div>
                 
                 <div className="col-12">
@@ -350,6 +408,21 @@ const Search = ({ showNotification }) => {
             <div className="d-flex justify-content-between align-items-center mb-4">
               <h3>
                 Результаты поиска
+                {searchParams.description && (
+                  <small className="text-muted ms-2">
+                    по описанию: "{searchParams.description}"
+                  </small>
+                )}
+                {searchParams.kind && !searchParams.description && (
+                  <small className="text-muted ms-2">
+                    по виду: "{searchParams.kind}"
+                  </small>
+                )}
+                {searchParams.district && !searchParams.description && !searchParams.kind && (
+                  <small className="text-muted ms-2">
+                    по району: "{searchParams.district}"
+                  </small>
+                )}
               </h3>
               <div>
                 <span className="badge bg-primary me-2">
@@ -363,6 +436,9 @@ const Search = ({ showNotification }) => {
             <div className="row">
               {results.map((pet) => {
                 const photoUrl = pet.photos ? getImageUrl(pet.photos) : null;
+                const highlightedDescription = searchParams.description 
+                  ? highlightText(pet.description || '', searchParams.description)
+                  : pet.description || 'Описание отсутствует';
                 
                 return (
                   <div key={pet.id} className="col-md-6 col-lg-4 mb-4">
@@ -382,11 +458,13 @@ const Search = ({ showNotification }) => {
                       </div>
                       <div className="card-body">
                         <h5 className="card-title">{pet.kind || 'Не указан'}</h5>
-                        <p className="card-text">
-                          {pet.description && pet.description.length > 100
-                            ? `${pet.description.substring(0, 100)}...`
-                            : pet.description || 'Описание отсутствует'}
-                        </p>
+                        <p className="card-text" 
+                           dangerouslySetInnerHTML={{ 
+                             __html: highlightedDescription && highlightedDescription.length > 100
+                               ? `${highlightedDescription.substring(0, 100)}...`
+                               : highlightedDescription || 'Описание отсутствует'
+                           }} 
+                        />
                         
                         <div className="pet-feature">
                           <i className="bi bi-tag"></i>
@@ -484,6 +562,11 @@ const Search = ({ showNotification }) => {
                     <strong>Вид животного:</strong> {searchParams.kind}
                   </div>
                 )}
+                {searchParams.description && (
+                  <div>
+                    <strong>Описание:</strong> "{searchParams.description}"
+                  </div>
+                )}
               </div>
               <div className="mt-3">
                 Попробуйте изменить параметры поиска.
@@ -496,7 +579,7 @@ const Search = ({ showNotification }) => {
               <i className="bi bi-search display-4 text-muted mb-3"></i>
               <h4 className="text-muted">Начните поиск животных</h4>
               <p className="text-muted">
-                Заполните хотя бы одно поле (район или вид животного) для поиска
+                Заполните хотя бы одно поле (район, вид животного или описание) для поиска
               </p>
             </div>
           </div>

@@ -595,42 +595,72 @@ const Profile = ({ showNotification }) => {
                                 </span>
                               </td>
                               <td className="px-4 py-3">
-                                <div className="btn-group" role="group">
-                                  <button
-                                    className="btn btn-outline-primary btn-sm"
-                                    onClick={() => navigate(`/pet/${pet.id}`)}
-                                  >
-                                    Просмотр
-                                  </button>
-                                  {canEditPet(pet) && (
-                                    <button
-                                      className="btn btn-outline-warning btn-sm"
-                                      onClick={() => handleEditPet(pet)}
-                                    >
-                                      Редактировать
-                                    </button>
-                                  )}
-                                  {canDeletePet(pet) && (
-                                    <button
-                                      className="btn btn-outline-danger btn-sm"
-                                      onClick={() => handleDeletePet(pet.id)}
-                                      disabled={isDeleting && deletePetId === pet.id}
-                                    >
-                                      {isDeleting && deletePetId === pet.id ? (
-                                        <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                                      ) : 'Удалить'}
-                                    </button>
-                                  )}
-                                  {!canDeletePet(pet) && (
-                                    <button
-                                      className="btn btn-outline-secondary btn-sm"
-                                      disabled
-                                    >
-                                      Удалить
-                                    </button>
-                                  )}
-                                </div>
-                              </td>
+  <div className="btn-group" role="group">
+    <button
+      className="btn btn-outline-primary btn-sm"
+      onClick={() => navigate(`/pet/${pet.id}`)}
+      style={{
+        borderColor: '#28a745',
+        color: '#28a745'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = '#28a745';
+        e.currentTarget.style.color = 'white';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = 'transparent';
+        e.currentTarget.style.color = '#28a745';
+      }}
+    >
+      Просмотр
+    </button>
+    
+    {canEditPet(pet) && (
+      <button
+        className="btn btn-outline-warning btn-sm"
+        onClick={() => handleEditPet(pet)}
+        style={{
+          borderColor: '#fd7e14',
+          color: '#fd7e14'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = '#fd7e14';
+          e.currentTarget.style.color = 'white';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = 'transparent';
+          e.currentTarget.style.color = '#fd7e14';
+        }}
+      >
+        Редактировать
+      </button>
+    )}
+    
+    {canDeletePet(pet) && (
+      <button
+        className="btn btn-outline-danger btn-sm"
+        onClick={() => handleDeletePet(pet.id)}
+        disabled={isDeleting && deletePetId === pet.id}
+      >
+        {isDeleting && deletePetId === pet.id ? (
+          <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        ) : 'Удалить'}
+      </button>
+    )}
+    
+    {!canDeletePet(pet) && (
+      <button
+        className="btn btn-outline-secondary btn-sm"
+        disabled
+        style={{
+          opacity: 0.6
+        }}
+      >
+        Удалить
+      </button>
+    )}
+  </div>
+</td>
                             </tr>
                           ))}
                         </tbody>
