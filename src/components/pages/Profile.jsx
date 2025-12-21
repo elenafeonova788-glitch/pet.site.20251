@@ -413,11 +413,11 @@ const Profile = ({ showNotification }) => {
 
   return (
     <div className="profile-page">
-      <div className="container py-5">
+      <div className="container-fluid py-5 px-4 px-lg-5">
         <div className="row justify-content-center">
-          <div className="col-md-10">
+          <div className="col-12">
             <div className="card shadow-lg border-0 rounded-3">
-              <div className="card-body p-5">
+              <div className="card-body p-4 p-md-5">
                 <div className="d-flex justify-content-between align-items-center mb-5">
                   <h2 className="mb-0 fw-bold">Личный кабинет</h2>
                   <button
@@ -429,7 +429,7 @@ const Profile = ({ showNotification }) => {
                 </div>
                
                 <div className="row mb-5">
-                  <div className="col-md-4 text-center">
+                  <div className="col-md-3 col-lg-2 text-center mb-4 mb-md-0">
                     <div className="profile-avatar bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-4"
                          style={{ width: '100px', height: '100px', borderRadius: '50%', fontSize: '2.5rem' }}>
                       {userData.name?.charAt(0).toUpperCase() || 'П'}
@@ -440,14 +440,14 @@ const Profile = ({ showNotification }) => {
                     </p>
                   </div>
                  
-                  <div className="col-md-8">
+                  <div className="col-md-9 col-lg-10">
                     <div className="row">
                       <div className="col-12 mb-4">
                         <label className="form-label fw-medium mb-2">Имя</label>
                         <div className="fs-5 py-2">{userData.name || 'Не указано'}</div>
                       </div>
                      
-                      <div className="col-md-6 mb-4">
+                      <div className="col-lg-6 mb-4">
                         <label className="form-label fw-medium mb-2">Email</label>
                         {isEditing ? (
                           <input
@@ -463,7 +463,7 @@ const Profile = ({ showNotification }) => {
                         )}
                       </div>
                      
-                      <div className="col-md-6 mb-4">
+                      <div className="col-lg-6 mb-4">
                         <label className="form-label fw-medium mb-2">Телефон</label>
                         {isEditing ? (
                           <input
@@ -480,12 +480,12 @@ const Profile = ({ showNotification }) => {
                         )}
                       </div>
                      
-                      <div className="col-md-6 mb-4">
+                      <div className="col-lg-6 mb-4">
                         <label className="form-label fw-medium mb-2">Дата регистрации</label>
                         <div className="fs-5 py-2">{formatDate(userData.registrationDate)}</div>
                       </div>
                      
-                      <div className="col-md-6 mb-4">
+                      <div className="col-lg-6 mb-4">
                         <label className="form-label fw-medium mb-2">Количество объявлений</label>
                         <div className="fs-5 py-2">{userData.ordersCount}</div>
                       </div>
@@ -551,116 +551,117 @@ const Profile = ({ showNotification }) => {
                       <table className="table table-hover mb-0">
                         <thead className="table-light">
                           <tr>
-                            <th className="px-4 py-3">Фото</th>
-                            <th className="px-4 py-3">Вид</th>
-                            <th className="px-4 py-3">Номер чипа</th>
-                            <th className="px-4 py-3">Район</th>
-                            <th className="px-4 py-3">Статус</th>
-                            <th className="px-4 py-3">Действия</th>
+                            <th className="px-3 py-3" style={{width: '80px'}}>Фото</th>
+                            <th className="px-3 py-3" style={{minWidth: '120px'}}>Вид</th>
+                            <th className="px-3 py-3" style={{minWidth: '130px'}}>Номер чипа</th>
+                            <th className="px-3 py-3" style={{minWidth: '150px'}}>Район</th>
+                            <th className="px-3 py-3" style={{minWidth: '120px'}}>Статус</th>
+                            <th className="px-3 py-3" style={{minWidth: '280px'}}>Действия</th>
                           </tr>
                         </thead>
                         <tbody>
                           {userPets.map(pet => (
                             <tr key={pet.id} className="align-middle">
-                              <td className="px-4 py-3">
+                              <td className="px-3 py-3">
                                 {pet.photos && pet.photos.length > 0 ? (
                                   <img
                                     src={pet.photos[0]}
                                     alt={pet.kind}
                                     className="rounded"
-                                    style={{ width: '60px', height: '60px', objectFit: 'cover' }}
+                                    style={{ width: '70px', height: '70px', objectFit: 'cover' }}
                                     onError={(e) => {
-                                      e.target.src = 'https://via.placeholder.com/60x60?text=No+Photo';
+                                      e.target.src = 'https://via.placeholder.com/70x70?text=No+Photo';
                                     }}
                                   />
                                 ) : (
                                   <div className="rounded bg-light d-flex align-items-center justify-content-center"
-                                       style={{ width: '60px', height: '60px' }}>
+                                       style={{ width: '70px', height: '70px' }}>
                                     <span className="text-muted">Нет фото</span>
                                   </div>
                                 )}
                               </td>
-                              <td className="px-4 py-3">
+                              <td className="px-3 py-3">
                                 <div className="fw-medium">{pet.kind}</div>
                               </td>
-                              <td className="px-4 py-3">
+                              <td className="px-3 py-3">
                                 <div>{pet.mark || <span className="text-muted">Не указан</span>}</div>
                               </td>
-                              <td className="px-4 py-3">
+                              <td className="px-3 py-3">
                                 <div>{pet.district}</div>
                               </td>
-                              <td className="px-4 py-3">
+                              <td className="px-3 py-3">
                                 <span className={getStatusClass(pet.status)}>
                                   {getStatusText(pet.status)}
                                 </span>
                               </td>
-                              <td className="px-4 py-3">
-  <div className="btn-group" role="group">
-    <button
-      className="btn btn-outline-primary btn-sm"
-      onClick={() => navigate(`/pet/${pet.id}`)}
-      style={{
-        borderColor: '#28a745',
-        color: '#28a745'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = '#28a745';
-        e.currentTarget.style.color = 'white';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = 'transparent';
-        e.currentTarget.style.color = '#28a745';
-      }}
-    >
-      Просмотр
-    </button>
-    
-    {canEditPet(pet) && (
-      <button
-        className="btn btn-outline-warning btn-sm"
-        onClick={() => handleEditPet(pet)}
-        style={{
-          borderColor: '#fd7e14',
-          color: '#fd7e14'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = '#fd7e14';
-          e.currentTarget.style.color = 'white';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = 'transparent';
-          e.currentTarget.style.color = '#fd7e14';
-        }}
-      >
-        Редактировать
-      </button>
-    )}
-    
-    {canDeletePet(pet) && (
-      <button
-        className="btn btn-outline-danger btn-sm"
-        onClick={() => handleDeletePet(pet.id)}
-        disabled={isDeleting && deletePetId === pet.id}
-      >
-        {isDeleting && deletePetId === pet.id ? (
-          <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-        ) : 'Удалить'}
-      </button>
-    )}
-    
-    {!canDeletePet(pet) && (
-      <button
-        className="btn btn-outline-secondary btn-sm"
-        disabled
-        style={{
-          opacity: 0.6
-        }}
-      >
-        Удалить
-      </button>
-    )}
-  </div>
-</td>
+                              <td className="px-3 py-3">
+                                <div className="d-flex flex-wrap gap-2" style={{minWidth: '250px'}}>
+                                  <button
+                                    className="btn btn-outline-primary btn-sm"
+                                    onClick={() => navigate(`/pet/${pet.id}`)}
+                                    style={{
+                                      borderColor: '#28a745',
+                                      color: '#28a745',
+                                      minWidth: '90px'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.backgroundColor = '#28a745';
+                                      e.currentTarget.style.color = 'white';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.backgroundColor = 'transparent';
+                                      e.currentTarget.style.color = '#28a745';
+                                    }}
+                                  >
+                                    <i className="bi bi-eye me-1"></i>
+                                    Просмотр
+                                  </button>
+                                  
+                                  {canEditPet(pet) && (
+                                    <button
+                                      className="btn btn-outline-warning btn-sm"
+                                      onClick={() => handleEditPet(pet)}
+                                      style={{
+                                        borderColor: '#fd7e14',
+                                        color: '#fd7e14',
+                                        minWidth: '110px'
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        e.currentTarget.style.backgroundColor = '#fd7e14';
+                                        e.currentTarget.style.color = 'white';
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                        e.currentTarget.style.color = '#fd7e14';
+                                      }}
+                                    >
+                                      <i className="bi bi-pencil me-1"></i>
+                                      Редактировать
+                                    </button>
+                                  )}
+                                  
+                                  <button
+                                    className="btn btn-outline-danger btn-sm"
+                                    onClick={() => handleDeletePet(pet.id)}
+                                    disabled={isDeleting && deletePetId === pet.id}
+                                    style={{
+                                      minWidth: '100px'
+                                    }}
+                                  >
+                                    {isDeleting && deletePetId === pet.id ? (
+                                      <>
+                                        <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                        Удаление...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <i className="bi bi-trash me-1"></i>
+                                        Удалить
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+                              </td>
                             </tr>
                           ))}
                         </tbody>
